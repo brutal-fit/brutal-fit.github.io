@@ -28,6 +28,12 @@
   --gutter: 16px;
   --header-h: 72px;
   --glass: color-mix(in srgb, var(--surface) 72%, transparent);
+
+  /* Motion: slow, eased, never bouncy. */
+  --ease-out: cubic-bezier(.2, .7, .2, 1);
+  --dur-fast: .3s;
+  --dur-med: .6s;
+  --dur-slow: .9s;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -53,6 +59,7 @@ body {
 }
 
 body.nav-open { overflow: hidden; }
+main, .site-footer { position: relative; }
 
 img, svg { display: block; max-width: 100%; }
 h1, h2, h3, p, ul, ol, figure { margin: 0; }
@@ -276,6 +283,17 @@ h3 { font-size: 1.125rem; line-height: 1.3; letter-spacing: -0.01em; }
   position: relative;
   padding: 72px 0;
 }
+.section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: calc(min(1200px, 100%) - 2 * var(--gutter));
+  height: 1px;
+  translate: -50% 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
 [id] { scroll-margin-top: calc(var(--header-h) + 16px); }
 
 .section-head {
@@ -314,6 +332,24 @@ h3 { font-size: 1.125rem; line-height: 1.3; letter-spacing: -0.01em; }
   padding: 40px 0 64px;
   overflow: hidden;
 }
+.hero > .container { position: relative; }
+/* Copy sits above the visual's glow and ring, which overflow into its column. */
+.hero-copy { position: relative; z-index: 1; }
+.hero-shader {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  contain: paint;
+  opacity: 0;
+  transition: opacity 1.2s var(--ease-out);
+}
+.has-shader .hero-shader { opacity: 1; }
+.has-shader .glow-wide { opacity: .32; }
+.has-shader .glow-core { opacity: .12; }
+.glow { transition: opacity 1.2s var(--ease-out); }
 .hero-grid {
   display: grid;
   gap: 48px;
@@ -360,6 +396,7 @@ h3 { font-size: 1.125rem; line-height: 1.3; letter-spacing: -0.01em; }
 .hero-note { margin-top: 16px; color: var(--text-3); font-size: .875rem; }
 
 .hero-visual {
+  --phone-w: 280px;
   position: relative;
   display: flex;
   justify-content: center;
@@ -386,10 +423,25 @@ h3 { font-size: 1.125rem; line-height: 1.3; letter-spacing: -0.01em; }
   opacity: .35;
 }
 
+/* Particle ring: as tall as the phone so it reads around it, not hidden behind it. */
+.hero-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--phone-w) * 874 / 402);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  pointer-events: none;
+  contain: paint;
+}
+
+.phone-scene { position: relative; perspective: 1400px; }
+
 /* Phone mock: 402x874 proportions, decorative and non-functional. */
 .phone {
   position: relative;
-  width: 280px;
+  width: var(--phone-w);
+  transform-style: preserve-3d;
   aspect-ratio: 402 / 874;
   padding: 10px;
   background: var(--surface-2);
@@ -498,6 +550,44 @@ h3 { font-size: 1.125rem; line-height: 1.3; letter-spacing: -0.01em; }
 .ph-tab .i { width: 20px; height: 20px; }
 .ph-tab.is-active { background: var(--neutral-light); color: var(--on-light); }
 
+/* Oversized so it can slide with the pointer; the screen's rounded clip hides the edges. */
+.phone-gloss {
+  position: absolute;
+  inset: -40%;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 38%, color-mix(in srgb, var(--text) 8%, transparent) 50%, transparent 62%);
+}
+
+/* Floating chips: phrases from the page, hidden from assistive tech to avoid repeats. */
+.chips {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform-style: preserve-3d;
+}
+.chip {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  white-space: nowrap;
+  background: var(--nav-pill);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--bg) 55%, transparent);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  transform: translateZ(var(--z));
+}
+.chip .i { width: 16px; height: 16px; color: var(--accent); }
+.chip-1 { --z: 90px; top: 4%; left: -6%; }
+.chip-2 { --z: 60px; top: 61%; right: -16%; display: none; }
+.chip-3 { --z: 40px; bottom: 20%; left: -18%; display: none; }
+
 /* How it works */
 .steps {
   display: grid;
@@ -510,6 +600,10 @@ h3 { font-size: 1.125rem; line-height: 1.3; letter-spacing: -0.01em; }
   display: block;
   margin-bottom: 16px;
   color: var(--accent);
+  background: linear-gradient(135deg, var(--accent-grad-start), var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   font-size: 3.5rem;
   font-weight: 700;
   letter-spacing: -0.04em;
@@ -567,13 +661,21 @@ h3 { font-size: 1.125rem; line-height: 1.3; letter-spacing: -0.01em; }
 /* Pricing */
 .price-panel {
   position: relative;
+  isolation: isolate;
   padding: 32px 24px;
   overflow: hidden;
-  background:
-    radial-gradient(80% 120% at 100% 0%, color-mix(in srgb, var(--accent-surface) 55%, transparent), transparent 70%),
-    var(--surface);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+}
+/* The glow lives on an oversized layer so it can drift without exposing an edge. */
+.price-panel::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(57% 86% at 86% 14%, color-mix(in srgb, var(--accent-surface) 55%, transparent), transparent 70%);
 }
 .price-head { margin-bottom: 28px; }
 .price-points { display: grid; gap: 24px; }
@@ -713,6 +815,8 @@ h3 { font-size: 1.125rem; line-height: 1.3; letter-spacing: -0.01em; }
 /* Breakpoints */
 @media (min-width: 600px) {
   :root { --gutter: 24px; }
+  .chip-1 { left: -18%; }
+  .chip-2 { display: inline-flex; }
   .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .field-row { grid-template-columns: 1fr 1fr; }
   .waitlist-form { padding: 32px; }
@@ -725,7 +829,10 @@ h3 { font-size: 1.125rem; line-height: 1.3; letter-spacing: -0.01em; }
   .section { padding: 104px 0; }
   .hero { padding: 64px 0 96px; }
   .hero-grid { grid-template-columns: 1.1fr .9fr; }
-  .phone { width: 300px; }
+  .hero-visual { --phone-w: 300px; }
+  .chip { font-size: 13px; }
+  .chip-2 { right: -24%; }
+  .chip-3 { display: inline-flex; left: -24%; }
   .steps { grid-template-columns: repeat(3, 1fr); }
   .grid-3 { grid-template-columns: repeat(3, 1fr); }
   .split { grid-template-columns: 1fr 1fr; gap: 64px; }
@@ -737,18 +844,150 @@ h3 { font-size: 1.125rem; line-height: 1.3; letter-spacing: -0.01em; }
 @media (min-width: 1200px) {
   :root { --gutter: 32px; }
   .grid-4 { grid-template-columns: repeat(4, 1fr); }
-  .phone { width: 320px; }
+  .hero-visual { --phone-w: 320px; }
 }
 
-/* Reveal: hidden only once JS has marked the page, and only when motion is welcome. */
+/* Motion layer. .motion is set by motion.js only when reduced motion is off, so without JS,
+   without motion.js or under reduce, everything below is inert and the page is static. */
+@keyframes rise { from { opacity: 0; translate: 0 28px; } }
+/* Starts barely visible, not hidden, so the headline still paints in its first frame. */
+@keyframes rise-soft { from { opacity: .01; translate: 0 .3em; } }
+@keyframes float { 50% { translate: 0 -8px; } }
+@keyframes drift { to { translate: -6% 5%; scale: 1.06; } }
+
 @media (prefers-reduced-motion: no-preference) {
-  html { scroll-behavior: smooth; }
-  .js [data-reveal] {
+  .motion { scroll-behavior: smooth; }
+
+  /* Scroll reveals. Sequenced heads animate their children; the rest fade up whole. */
+  .motion [data-reveal]:not(.reveal-seq),
+  .motion .reveal-seq > :not(.is-split) {
     opacity: 0;
-    transform: translateY(20px);
-    transition: opacity .6s ease, transform .6s ease;
+    transform: translateY(24px);
+    transition: opacity .8s var(--ease-out) var(--rd, 0ms), transform .8s var(--ease-out) var(--rd, 0ms);
   }
-  .js [data-reveal].is-visible { opacity: 1; transform: none; }
+  .motion [data-reveal].is-visible:not(.reveal-seq),
+  .motion .reveal-seq.is-visible > :not(.is-split) { opacity: 1; transform: none; }
+  .motion .w {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+    padding-bottom: .12em;
+    margin-bottom: -.12em;
+  }
+  .motion .w > span {
+    display: inline-block;
+    transform: translateY(110%);
+    transition: transform .8s var(--ease-out) var(--rd, 0ms);
+  }
+  .motion .is-visible .w > span { transform: none; }
+  /* Resting state, set 1.5 s after the reveal starts: final values, no transition, no mask. */
+  .motion [data-reveal].is-done,
+  .motion .reveal-seq.is-done > *,
+  .motion .is-done .w > span { opacity: 1; transform: none; transition: none; }
+  .motion .is-done .w { overflow: visible; }
+
+  /* Hero intro on load: eyebrow, headline words, lead, buttons, note, then the phone. */
+  .motion.intro .hero-copy > :not(h1),
+  .motion.intro .phone-scene { animation: rise .8s var(--ease-out) var(--rd, 0ms) both; }
+  .motion.intro .hw > span,
+  .motion.intro .hero h1 .accent-text { animation: rise-soft .8s var(--ease-out) var(--rd, 0ms) both; }
+  .motion .hw > span { display: inline-block; }
+  .hero .lead { --rd: 420ms; }
+  .hero-actions { --rd: 520ms; }
+  .hero-note { --rd: 620ms; }
+  .phone-scene { --rd: 300ms; }
+
+  /* Idle float on the translate property, so the pointer tilt can own transform. */
+  .motion .phone { animation: float 7s ease-in-out infinite; }
+  .motion .chip { animation: float 7s ease-in-out infinite; }
+  .motion .chip-2 { animation-delay: 1.6s; }
+  .motion .chip-3 { animation-delay: 3.1s; }
+  .motion .price-panel::before { animation: drift 12s ease-in-out infinite alternate; }
+
+  /* Fine pointer only: custom cursor, spotlight, magnetic buttons, lit and tilting cards. */
+  .pointer-fine,
+  .pointer-fine * { cursor: none; }
+  /* Fields keep the native cursor so the text caret and select arrow stay visible. */
+  .pointer-fine :is(input, textarea, select, [contenteditable]) { cursor: auto; }
+  .pointer-fine .phone { will-change: transform; }
+
+  .cursor { position: fixed; top: 0; left: 0; z-index: 100; pointer-events: none; opacity: 0; transition: opacity var(--dur-fast) ease; }
+  .cursor.is-on { opacity: 1; }
+  .cursor.is-field { opacity: 0; }
+  .cursor-dot,
+  .cursor-ring { position: absolute; top: 0; left: 0; border-radius: 50%; will-change: transform; }
+  .cursor-dot { width: 6px; height: 6px; margin: -3px 0 0 -3px; background: var(--accent); transition: scale .2s ease; }
+  .cursor-ring {
+    width: 36px;
+    height: 36px;
+    margin: -18px 0 0 -18px;
+    border: 1px solid var(--border-strong);
+    transition: scale var(--dur-fast) var(--ease-out), border-color var(--dur-fast) ease, background-color var(--dur-fast) ease;
+  }
+  .cursor.is-down .cursor-dot { scale: .6; }
+  .cursor.is-link .cursor-ring { scale: 1.6; border-color: color-mix(in srgb, var(--accent) 70%, transparent); }
+  .cursor.is-magnetic .cursor-ring { scale: 2.2; border-color: color-mix(in srgb, var(--accent) 70%, transparent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+  /* A 600px-radius glow moved by transform, so following the pointer costs no repaint. */
+  .spotlight {
+    position: fixed;
+    top: -600px;
+    left: -600px;
+    z-index: 0;
+    width: 1200px;
+    height: 1200px;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(circle closest-side, color-mix(in srgb, var(--accent) 7%, transparent), transparent 60%);
+    transition: opacity var(--dur-med) ease;
+    will-change: transform;
+  }
+  .spotlight.is-on { opacity: 1; }
+
+  .pointer-fine .btn-label { display: inline-block; }
+  .pointer-fine .grid,
+  .pointer-fine .steps { perspective: 1400px; }
+  .pointer-fine .card { isolation: isolate; }
+  /* Border ring lit where the pointer is: the mask keeps only the 1px edge. */
+  .pointer-fine .card::after,
+  .pointer-fine .card:not(.step)::before {
+    content: "";
+    position: absolute;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--dur-fast) ease;
+  }
+  .pointer-fine .card::after {
+    inset: -1px;
+    padding: 1px;
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 35%, transparent), transparent 60%);
+    -webkit-mask: linear-gradient(var(--bg) 0 0) content-box, linear-gradient(var(--bg) 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(var(--bg) 0 0) content-box exclude, linear-gradient(var(--bg) 0 0);
+  }
+  /* Faint surface glow under the content; step cards keep ::before for their number. */
+  .pointer-fine .card:not(.step)::before {
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 6%, transparent), transparent 60%);
+  }
+  .pointer-fine .card.is-lit::after,
+  .pointer-fine .card.is-lit:not(.step)::before { opacity: 1; }
+}
+
+/* Grain costs paint on phones, so desktop pointers only. */
+@media (prefers-reduced-motion: no-preference) and (min-width: 880px) {
+  .motion.pointer-fine body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    pointer-events: none;
+    opacity: .04;
+    mix-blend-mode: overlay;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

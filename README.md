@@ -15,16 +15,21 @@ It is one of four sibling repositories worked on from the parent `Brutal/` folde
 
 ## What it is
 
-A static site: plain HTML, CSS and a little vanilla JavaScript, no framework and no build
+A static site: plain HTML, CSS and vanilla JavaScript, no framework, no library and no build
 step. Search engines get fully rendered content, the page loads fast, and nothing has to be
 installed to edit it. The design follows the app: `#161616` background with a red glow,
-`#FF5656` accent, Montserrat.
+`#FF5656` accent, Montserrat. The motion layer (a cursor-reactive WebGL shader behind the
+hero, a rotating 3D particle ring and floating depth chips behind the phone, phone tilt, a
+custom cursor with a page spotlight, magnetic buttons, spotlight-border cards, choreographed
+reveals, film grain) is hand-written in `assets/js/motion.js`. It switches off under
+`prefers-reduced-motion`, the cursor-driven parts only run on fine pointers with hover, and
+the page reads completely without JavaScript.
 
 ```
 index.html          the single page (hero, how it works, clients, trainers, safety, pricing, FAQ, waitlist)
 404.html            not-found page (noindex)
 assets/css/         styles.css, all styling and the brand tokens
-assets/js/          main.js, nav toggle, scrolled header, reveal on scroll, waitlist form
+assets/js/          main.js (nav toggle, scrolled header, waitlist form), motion.js (the motion layer)
 assets/img/         logo.svg, mark.svg, og-image.png (1200x630), apple-touch-icon.png
 site.webmanifest, robots.txt, sitemap.xml, .nojekyll
 ```
@@ -38,8 +43,11 @@ python3 -m http.server 8080
 ```
 
 No tests. The check that runs before a commit is a Python script that validates the SEO head,
-heading structure, JSON-LD, local links, robots and sitemap, and scans for non-ASCII
-punctuation; see the handoff package under `../memory/.claude/handoffs/2026-10-18-website-draft/`.
+heading structure, JSON-LD, local links, robots and sitemap, scans for non-ASCII punctuation
+and checks the size budget (JS under 30 KB, HTML + CSS + JS under 100 KB); see the handoff
+packages under `../memory/.claude/handoffs/2026-10-18-website-*/`. Headless Chrome notes for
+screenshots and behaviour checks: `../memory/notes/website-headless-chrome.md` and
+`website-motion-testing.md`.
 
 Rules in short: no invented numbers, testimonials, logos, badges, prices or city names
 (nothing is live yet); features the app does not have are described as roadmap; a trainer's

@@ -7,7 +7,6 @@ const WAITLIST_ENDPOINT = '';
   var root = document.documentElement;
   root.classList.add('js');
 
-  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   var desktop = window.matchMedia('(min-width: 880px)');
 
   // Navigation: mobile panel toggle and the scrolled pill state.
@@ -57,24 +56,7 @@ const WAITLIST_ENDPOINT = '';
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
-  // Reveal on scroll. Without IntersectionObserver or with reduced motion, show everything now.
-  var revealables = document.querySelectorAll('[data-reveal]');
-  function showAll() {
-    for (var i = 0; i < revealables.length; i++) revealables[i].classList.add('is-visible');
-  }
-  if (reduceMotion.matches || !('IntersectionObserver' in window)) {
-    showAll();
-  } else {
-    var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
-    for (var j = 0; j < revealables.length; j++) observer.observe(revealables[j]);
-  }
+  // Reveal on scroll lives in motion.js, behind the reduced-motion gate.
 
   // Links marked data-role preselect the waitlist role, so no query string is needed.
   var form = document.getElementById('waitlist-form');

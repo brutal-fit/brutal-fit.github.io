@@ -25,7 +25,13 @@ book and train with verified trainers, at home or online). GitHub Pages organisa
 
 Static HTML, CSS and vanilla JS. No framework, no build step, no dependencies, no bundler. The
 only request that leaves the origin is the Google Fonts stylesheet for Montserrat. Adding a
-tool, a script tag or a dependency is a decision for the owner, proposed in chat first.
+tool, a script tag or a dependency is a decision for the owner, proposed in chat first. The
+motion layer in `assets/js/motion.js` (WebGL shader, canvas particle ring, tilt, cursor,
+magnetic buttons, card spotlight, reveals) is hand-written for that reason; keep it under
+30 KB and gated: off under `prefers-reduced-motion: reduce`, cursor-driven effects only
+under `(pointer: fine) and (hover: hover)`, content fully visible without JS. Every reveal
+must reach a guaranteed resting state (the `is-done` rule) so a stalled transition can never
+leave text hidden or clipped.
 
 ## Non-negotiable rules
 
@@ -67,7 +73,8 @@ tool, a script tag or a dependency is a decision for the owner, proposed in chat
 ```
 index.html, 404.html
 assets/css/styles.css      tokens + all styling (mobile first; breakpoints 600 / 880 / 1200)
-assets/js/main.js          nav toggle, scrolled header, reveal on scroll, waitlist form
+assets/js/main.js          nav toggle, scrolled header, waitlist form
+assets/js/motion.js        motion layer (see Stack), one rAF loop, gates and teardown
 assets/img/                logo.svg, mark.svg, og-image.png, apple-touch-icon.png
 site.webmanifest, robots.txt, sitemap.xml, .nojekyll
 .claude/                   this file and settings.json

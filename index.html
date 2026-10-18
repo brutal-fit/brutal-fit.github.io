@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;display=swap">
 <link rel="stylesheet" href="assets/css/styles.css">
 <script src="assets/js/main.js" defer></script>
+<script src="assets/js/motion.js" defer></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -115,7 +116,7 @@
         <li><a href="#safety">Safety</a></li>
         <li><a href="#faq">FAQ</a></li>
       </ul>
-      <a class="btn btn-primary btn-sm" href="#waitlist">Join the waitlist</a>
+      <a class="btn btn-primary btn-sm" href="#waitlist" data-magnetic><span class="btn-label">Join the waitlist</span></a>
     </div>
   </nav>
 </header>
@@ -123,14 +124,15 @@
 <main id="main">
 
   <section id="hero" class="hero" aria-labelledby="hero-title">
+    <canvas id="hero-shader" class="hero-shader" aria-hidden="true"></canvas>
     <div class="container hero-grid">
       <div class="hero-copy">
         <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>Launching in India</p>
         <h1 id="hero-title">Train with verified trainers. <span class="accent-text">At home or online.</span></h1>
         <p class="lead">BRUTAL finds you a verified personal trainer, books the session, and keeps the price and your address safe. You bring the effort.</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="#waitlist">Join the waitlist</a>
-          <a class="btn btn-secondary" href="#for-trainers">I am a trainer</a>
+          <a class="btn btn-primary" href="#waitlist" data-magnetic><span class="btn-label">Join the waitlist</span></a>
+          <a class="btn btn-secondary" href="#for-trainers" data-magnetic><span class="btn-label">I am a trainer</span></a>
         </div>
         <p class="hero-note">Android first. iOS to follow.</p>
       </div>
@@ -138,6 +140,8 @@
       <div class="hero-visual">
         <div class="glow glow-wide" aria-hidden="true"></div>
         <div class="glow glow-core" aria-hidden="true"></div>
+        <canvas id="hero-ring" class="hero-ring" aria-hidden="true"></canvas>
+        <div class="phone-scene">
         <div class="phone" role="img" aria-label="Preview of the BRUTAL client home screen: a search field, two verified trainer cards and the Online, Home and AI coach tabs.">
           <div class="phone-screen">
             <div class="ph-notch"></div>
@@ -173,7 +177,14 @@
               <span class="ph-tab is-active"><svg class="i" viewBox="0 0 24 24" width="20" height="20"><path d="M4 11l8-7 8 7M6 10v10h12V10"/></svg></span>
               <span class="ph-tab"><svg class="i" viewBox="0 0 24 24" width="20" height="20"><path d="M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8zM18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/></svg></span>
             </div>
+            <div class="phone-gloss" aria-hidden="true"></div>
           </div>
+          <ul class="chips" aria-hidden="true">
+            <li class="chip chip-1"><svg class="i" viewBox="0 0 24 24" width="16" height="16"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Verified</li>
+            <li class="chip chip-2"><svg class="i" viewBox="0 0 24 24" width="16" height="16"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Price locked at booking</li>
+            <li class="chip chip-3"><svg class="i" viewBox="0 0 24 24" width="16" height="16"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Address shared after confirmation</li>
+          </ul>
+        </div>
         </div>
       </div>
     </div>
@@ -251,7 +262,7 @@
         <p class="kicker">For trainers</p>
         <h2 id="trainers-title">For trainers who want clients, not admin</h2>
         <p class="lead">You are good at training people. You should not have to be good at marketing, chasing payments and guarding your address. BRUTAL brings you clients who are ready to train, handles booking and rescheduling, and sets a fair platform price so you never negotiate.</p>
-        <a class="btn btn-primary" href="#waitlist" data-role="trainer">Apply as a trainer</a>
+        <a class="btn btn-primary" href="#waitlist" data-role="trainer" data-magnetic><span class="btn-label">Apply as a trainer</span></a>
       </div>
       <div class="card checklist-card" data-reveal>
         <ul class="checklist">
@@ -389,7 +400,7 @@
             <input id="wl-city" name="city" type="text" autocomplete="address-level2">
           </div>
         </div>
-        <button class="btn btn-primary btn-block" type="submit">Join the waitlist</button>
+        <button class="btn btn-primary btn-block" type="submit" data-magnetic><span class="btn-label">Join the waitlist</span></button>
         <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
         <noscript><p class="form-status">The waitlist is not open yet. We are not collecting details until it is. Check back soon.</p></noscript>
         <p class="form-note" id="form-note">No spam. One email when we open in your area.</p>
