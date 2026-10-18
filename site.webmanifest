@@ -1,0 +1,13 @@
+{
+  "name": "BRUTAL",
+  "short_name": "BRUTAL",
+  "description": "Verified personal trainers at home or online in India.",
+  "start_url": "/",
+  "display": "browser",
+  "theme_color": "#161616",
+  "background_color": "#161616",
+  "icons": [
+    { "src": "/assets/img/mark.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/assets/img/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

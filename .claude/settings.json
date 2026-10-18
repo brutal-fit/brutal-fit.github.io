@@ -1,0 +1,7 @@
+{
+  "model": "fable[1m]",
+  "effortLevel": "high",
+  "permissions": {
+    "defaultMode": "auto"
+  }
+}

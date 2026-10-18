@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://brutal-fit.github.io/sitemap.xml

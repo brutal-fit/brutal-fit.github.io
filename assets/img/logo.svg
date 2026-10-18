@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 222 40" width="222" height="40" role="img" aria-labelledby="t">
+<title id="t">BRUTAL</title>
+<g fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="square" stroke-linejoin="miter">
+<path d="M4 4V36H18A8 8 0 0 0 18 20H4M4 4H16A8 8 0 0 1 16 20"/>
+<g transform="translate(36)"><path d="M4 36V4H16A8 8 0 0 1 16 20H4"/><path stroke-linecap="butt" d="M13 20L27 42"/></g>
+<path transform="translate(72)" d="M4 4V25A11 11 0 0 0 26 25V4"/>
+<path transform="translate(108)" d="M4 4H26M15 4V36"/>
+<path transform="translate(144)" d="M4 36V15A11 11 0 0 1 26 15V36M4 24H26"/>
+<path transform="translate(180)" d="M4 4V36H24"/>
+</g>
+<rect x="214" y="32" width="8" height="8" fill="#FF5656"/>
+</svg>
