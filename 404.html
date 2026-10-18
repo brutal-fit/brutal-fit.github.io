@@ -13,11 +13,12 @@
 <link rel="manifest" href="/site.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&amp;family=Montserrat:wght@400;500;600;700&amp;display=swap">
 <!-- Root-relative paths: GitHub Pages serves this file for missing URLs at any depth. -->
 <link rel="stylesheet" href="/assets/css/styles.css">
 <script src="/assets/js/main.js" defer></script>
 <script src="/assets/js/motion.js" defer></script>
+<script src="/assets/js/chapters.js" defer></script>
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -42,10 +43,11 @@
 </header>
 
 <main id="main">
-  <section class="not-found" aria-labelledby="nf-title">
+  <section class="not-found grid-bg" aria-labelledby="nf-title">
+    <span class="numeral nf-num" aria-hidden="true">404</span>
     <div class="container">
-      <p class="kicker">Error 404</p>
-      <h1 id="nf-title">Page not found</h1>
+      <p class="label">Error 404</p>
+      <h1 id="nf-title" class="display">Page <span class="serif">not</span> found</h1>
       <p class="lead">This page does not exist, or it has moved. Everything about BRUTAL is on the home page.</p>
       <a class="btn btn-primary" href="/" data-magnetic><span class="btn-label">Back to the home page</span></a>
     </div>
@@ -53,24 +55,31 @@
 </main>
 
 <footer class="site-footer">
-  <div class="container footer-grid">
-    <div class="footer-brand">
-      <img src="/assets/img/logo.svg" alt="BRUTAL" width="122" height="22" loading="lazy">
-      <p>Verified trainers. At home or online. India.</p>
+  <div class="container">
+    <p class="wordmark" aria-hidden="true"><span class="fl">B</span><span class="fl">R</span><span class="fl">U</span><span class="fl">T</span><span class="fl">A</span><span class="fl">L</span></p>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="/assets/img/logo.svg" alt="BRUTAL" width="122" height="22" loading="lazy">
+        <p>Verified trainers. At home or online. India.</p>
+      </div>
+      <nav aria-label="Footer">
+        <ul class="footer-links">
+          <li><a href="/#how-it-works">How it works</a></li>
+          <li><a href="/#for-clients">For clients</a></li>
+          <li><a href="/#for-trainers">For trainers</a></li>
+          <li><a href="/#safety">Safety</a></li>
+          <li><a href="/#faq">FAQ</a></li>
+        </ul>
+      </nav>
     </div>
-    <nav aria-label="Footer">
-      <ul class="footer-links">
-        <li><a href="/#how-it-works">How it works</a></li>
-        <li><a href="/#for-clients">For clients</a></li>
-        <li><a href="/#for-trainers">For trainers</a></li>
-        <li><a href="/#safety">Safety</a></li>
-        <li><a href="/#faq">FAQ</a></li>
+    <div class="footer-base">
+      <ul class="footer-legal">
+        <li><a href="/privacy/">Privacy policy</a></li>
+        <li><a href="/delete-account/">Delete your account</a></li>
+        <li>Terms: coming soon</li>
       </ul>
-    </nav>
-  </div>
-  <div class="container footer-base">
-    <p>Terms and Privacy policy: coming soon</p>
-    <p>&copy; 2026 BRUTAL</p>
+      <p>&copy; 2026 BRUTAL</p>
+    </div>
   </div>
 </footer>
 </body>

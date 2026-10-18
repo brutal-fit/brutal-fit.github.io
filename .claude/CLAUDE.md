@@ -26,12 +26,17 @@ book and train with verified trainers, at home or online). GitHub Pages organisa
 Static HTML, CSS and vanilla JS. No framework, no build step, no dependencies, no bundler. The
 only request that leaves the origin is the Google Fonts stylesheet for Montserrat. Adding a
 tool, a script tag or a dependency is a decision for the owner, proposed in chat first. The
-motion layer in `assets/js/motion.js` (WebGL shader, canvas particle ring, tilt, cursor,
+motion layer in `assets/js/motion.js` (WebGL shader, canvas particle ring, tilt, page spotlight,
 magnetic buttons, card spotlight, reveals) is hand-written for that reason; keep it under
-30 KB and gated: off under `prefers-reduced-motion: reduce`, cursor-driven effects only
-under `(pointer: fine) and (hover: hover)`, content fully visible without JS. Every reveal
-must reach a guaranteed resting state (the `is-done` rule) so a stalled transition can never
-leave text hidden or clipped.
+70 KB across `motion.js` and `chapters.js` and gated: off under `prefers-reduced-motion:
+reduce`, cursor-driven effects only under `(pointer: fine) and (hover: hover)`, content fully
+visible without JS, native scroll never hijacked. Every reveal and every pinned scene must
+reach a guaranteed resting state (the `is-done` and settle rules) so a stalled transition can
+never leave text hidden or clipped. State classes on `<html>` are always `is-*` so they can
+never match a component class (a bare `intro` once capped the whole document at a paragraph
+width).
+The motion layer has no custom cursor by the owner's decision (2026-10-18): the native cursor
+stays everywhere; do not add one.
 
 ## Non-negotiable rules
 
@@ -71,10 +76,11 @@ leave text hidden or clipped.
 ## Layout
 
 ```
-index.html, 404.html
-assets/css/styles.css      tokens + all styling (mobile first; breakpoints 600 / 880 / 1200)
+index.html, 404.html, privacy/index.html, delete-account/index.html
+assets/css/styles.css      tokens, type scale, chapter layouts, motion states (breakpoints 600 / 880 / 1200)
 assets/js/main.js          nav toggle, scrolled header, waitlist form
-assets/js/motion.js        motion layer (see Stack), one rAF loop, gates and teardown
+assets/js/motion.js        shared loop, pointer tracker, gates, hero, curtain, reveals
+assets/js/chapters.js      one mechanic per chapter (journey, gallery, ticker, pills, safety, slider, FAQ, footer)
 assets/img/                logo.svg, mark.svg, og-image.png, apple-touch-icon.png
 site.webmanifest, robots.txt, sitemap.xml, .nojekyll
 .claude/                   this file and settings.json

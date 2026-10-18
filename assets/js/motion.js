@@ -1,5 +1,5 @@
 // Motion layer. Decorative only: the page is complete without it, and every effect sits behind
-// the reduced-motion gate (nothing runs) and the fine-pointer gate (no cursor-driven effects).
+// the reduced-motion gate (nothing runs) and the fine-pointer gate (no pointer-driven effects).
 (function () {
   'use strict';
 
@@ -8,13 +8,18 @@
   var fine = W.matchMedia('(pointer: fine)');
   var hoverOk = W.matchMedia('(hover: hover)');
   var wide = W.matchMedia('(min-width: 880px)');
+  var mid = W.matchMedia('(min-width: 600px)');
+  // Pinned scenes need a screen-sized window; a window taller than any screen gets the static row.
+  var short = W.matchMedia('(max-height: 1400px)');
   var hero = D.getElementById('hero');
   var hasIO = 'IntersectionObserver' in W;
 
   var on = false, introDone = false, prepared = false, heroVisible = true, scrolling = false;
-  var raf = 0, last = 0;
-  var updaters = [], cleanups = [], resizers = [];
+  var raf = 0, last = 0, quiet = 0;
+  var updaters = [], cleanups = [], resizers = [], mods = [];
   var pointer = { x: 0, y: 0, nx: 0, ny: 0, active: false };
+  // Scroll is read in the listener and consumed in the loop: sy now, dy since the last frame.
+  var S = { sy: W.scrollY, prev: W.scrollY, dy: 0, vh: W.innerHeight, vw: D.documentElement.clientWidth };
 
   function lerp(a, b, t) { return a + (b - a) * t; }
   function near(a, b) { return Math.abs(a - b) < 0.002; }
@@ -43,28 +48,81 @@
   function kick() {
     if (on && !raf && !D.hidden) raf = W.requestAnimationFrame(frame);
   }
+  // Keeps ticking 600 ms after the last movement so springs and inertia can finish, then sleeps.
   function frame(now) {
     raf = 0;
     var dt = last ? Math.min((now - last) / 1000, 0.1) : 1 / 60, more = false;
     last = now;
+    S.sy = W.scrollY;
+    S.dy = S.sy - S.prev;
+    S.prev = S.sy;
+    if (S.dy) more = true;
     for (var i = 0; i < updaters.length; i++) if (updaters[i](dt)) more = true;
-    if (more) kick(); else last = 0;
+    if (more) quiet = now;
+    if (now - quiet < 600) kick(); else last = 0;
+  }
+
+  // Semi-implicit Euler spring on {x, v}; zeta 1 is critically damped. Returns true while moving.
+  function spring(st, target, k, zeta, dt) {
+    dt = Math.min(dt, 0.032);
+    var a = -k * (st.x - target) - 2 * zeta * Math.sqrt(k) * st.v;
+    st.v += a * dt;
+    st.x += st.v * dt;
+    if (Math.abs(st.x - target) < 0.01 && Math.abs(st.v) < 0.01) { st.x = target; st.v = 0; return false; }
+    return true;
+  }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  // Layout position in the document, unaffected by transforms (reveals, springs, parallax).
+  function pageTop(el) {
+    var y = 0;
+    while (el) { y += el.offsetTop; el = el.offsetParent; }
+    return y;
+  }
+  // Pins a container's end state once its transitions should be over, so a stalled timeline
+  // can never leave a half-faded layer; the next change removes the pin and animates again.
+  function settle(el, ms) {
+    el.classList.remove('is-settled');
+    clearTimeout(el.settleT);
+    el.settleT = setTimeout(function () { el.classList.add('is-settled'); }, ms || 700);
+  }
+  // One observer for every "is it on screen" question; a chapter coming into view wakes the loop.
+  var seen = null;
+  function watch(el, margin) {
+    var st = { in: !hasIO };
+    if (!hasIO || !el) return st;
+    var io = new IntersectionObserver(function (es) {
+      st.in = es[es.length - 1].isIntersecting;
+      if (st.in) kick();
+    }, { rootMargin: margin || '120px 0px' });
+    io.observe(el);
+    later(function () { io.disconnect(); });
+    return st;
   }
 
   // Reveal choreography. Prepared once; the split text is identical, so it survives a teardown.
   // Anything unexpected leaves the heading as plain text, which is never hidden.
+  // Inline elements (the serif accent) move as one word; punctuation glued to them rides along.
   function splitWords(el, cls, base, step) {
-    for (var i = 0; i < el.childNodes.length; i++) if (el.childNodes[i].nodeType !== 3) return 0;
-    var frag = D.createDocumentFragment(), n = 0;
-    el.textContent.split(/(\s+)/).forEach(function (part) {
-      if (!part) return;
-      if (/^\s+$/.test(part)) { frag.appendChild(D.createTextNode(part)); return; }
-      var outer = D.createElement('span'), inner = D.createElement('span');
+    var frag = D.createDocumentFragment(), n = 0, prev = null;
+    function word(inner, glue) {
+      rd(inner, base + (glue ? n - 1 : n++) * step);
+      if (glue) { prev.appendChild(inner); return; }
+      var outer = D.createElement('span');
       outer.className = cls;
-      inner.textContent = part;
-      rd(inner, base + n++ * step);
       outer.appendChild(inner);
       frag.appendChild(outer);
+      prev = outer;
+    }
+    Array.prototype.slice.call(el.childNodes).forEach(function (c) {
+      if (c.nodeType === 1) { word(c, false); return; }
+      if (c.nodeType !== 3) return;
+      c.textContent.split(/(\s+)/).forEach(function (part, i) {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.appendChild(D.createTextNode(part)); prev = null; return; }
+        var s = D.createElement('span');
+        s.textContent = part;
+        word(s, i === 0 && prev !== null);
+      });
     });
     el.textContent = '';
     el.appendChild(frag);
@@ -74,32 +132,16 @@
 
   function prepare() {
     prepared = true;
-    each(D.querySelectorAll('.section-head[data-reveal]'), function (head) {
+    each(D.querySelectorAll('.chapter-head[data-reveal]'), function (head) {
       head.classList.add('reveal-seq');
       each(head.children, function (c, i) { rd(c, i * 80); });
     });
     each(D.querySelectorAll('[data-reveal] h2'), function (h) {
       try { splitWords(h, 'w', h.parentNode.classList.contains('reveal-seq') ? 80 : 120, 80); } catch (e) { /* stays plain */ }
     });
-    each(D.querySelectorAll('.grid, .steps'), function (g) {
-      var step = g.classList.contains('steps') ? 120 : 70;
-      each(g.children, function (c, i) { rd(c, i * step); });
-    });
-    // Hero headline: words of the plain line, then the accent line. Painted from the first frame.
-    var h1 = hero && hero.querySelector('h1');
-    if (!h1) return;
-    var node = h1.firstChild, t = 80;
-    if (node && node.nodeType === 3 && node.textContent.trim()) {
-      var span = D.createElement('span');
-      span.textContent = node.textContent;
-      h1.replaceChild(span, node);
-      t += splitWords(span, 'hw', t, 70) * 70;
-      // Unwrap so the words sit directly in the h1, as the text did.
-      while (span.firstChild) h1.insertBefore(span.firstChild, span);
-      h1.removeChild(span);
-    }
-    var accent = h1.querySelector('.accent-text');
-    if (accent) rd(accent, t + 40);
+    // Hero headline: the words are wrapped in the markup; they rise in reading order.
+    // They start as the curtain opens, so the two overlap.
+    if (hero) each(hero.querySelectorAll('h1 .hw > span'), function (w, i) { rd(w, 900 + i * 70); });
   }
 
   // Reveals use CSS transitions only, never the loop or pointer input. Every stagger ends within
@@ -337,15 +379,14 @@
   }
 
   // 3. Phone tilt, glass gloss and chip parallax. The idle float is CSS, on the translate property.
-  function phone() {
-    var el = hero.querySelector('.phone');
+  function tilt(el, vis) {
     if (!el) return;
     var gloss = el.querySelector('.phone-gloss'), s = { x: 0, y: 0 }, chips = [];
     each(el.querySelectorAll('.chip'), function (c) {
       chips.push({ el: c, z: parseFloat(getComputedStyle(c).getPropertyValue('--z')) || 0 });
     });
     updaters.push(function () {
-      if (!heroVisible) return false;
+      if (!vis()) return false;
       var tx = pointer.active ? pointer.nx : 0, ty = pointer.active ? pointer.ny : 0;
       s.x = lerp(s.x, tx, 0.08);
       s.y = lerp(s.y, ty, 0.08);
@@ -366,47 +407,25 @@
     });
   }
 
-  // 4. Custom cursor and page spotlight, created only for fine pointers.
-  function cursor() {
-    var wrap = D.createElement('div'), spot = D.createElement('div');
-    wrap.className = 'cursor';
+  // 4. Page spotlight, created only for fine pointers.
+  function spotlight() {
+    var spot = D.createElement('div'), shown = false, l = { x: 0, y: 0 };
     spot.className = 'spotlight';
-    wrap.setAttribute('aria-hidden', 'true');
     spot.setAttribute('aria-hidden', 'true');
-    wrap.innerHTML = '<div class="cursor-dot"></div><div class="cursor-ring"></div>';
-    D.body.appendChild(wrap);
     D.body.insertBefore(spot, D.body.firstChild);
-    var dot = wrap.firstChild, ringEl = wrap.lastChild, shown = false;
-    var d = { x: 0, y: 0 }, r = { x: 0, y: 0 }, l = { x: 0, y: 0 };
-    listen(D, 'pointerover', function (e) {
-      var t = e.target;
-      if (!t || !t.closest) return;
-      var field = !!t.closest('input, textarea, select, [contenteditable]');
-      var mag = !field && !!t.closest('[data-magnetic]');
-      wrap.classList.toggle('is-field', field);
-      wrap.classList.toggle('is-magnetic', mag);
-      wrap.classList.toggle('is-link', !field && !mag && !!t.closest('a, button, summary, .card, label'));
-    });
-    listen(D, 'pointerdown', function () { wrap.classList.add('is-down'); });
-    listen(D, 'pointerup', function () { wrap.classList.remove('is-down'); });
     updaters.push(function () {
       if (pointer.active !== shown) {
         shown = pointer.active;
-        wrap.classList.toggle('is-on', shown);
         spot.classList.toggle('is-on', shown);
         // Appear where the pointer is instead of gliding in from the corner.
-        if (shown) { d.x = r.x = l.x = pointer.x; d.y = r.y = l.y = pointer.y; }
+        if (shown) { l.x = pointer.x; l.y = pointer.y; }
       }
-      [[d, 0.35], [r, 0.14], [l, 0.12]].forEach(function (f) {
-        f[0].x = lerp(f[0].x, pointer.x, f[1]);
-        f[0].y = lerp(f[0].y, pointer.y, f[1]);
-      });
-      dot.style.transform = move(d.x, d.y);
-      ringEl.style.transform = move(r.x, r.y);
+      l.x = lerp(l.x, pointer.x, 0.12);
+      l.y = lerp(l.y, pointer.y, 0.12);
       spot.style.transform = move(l.x, l.y);
       return Math.abs(l.x - pointer.x) + Math.abs(l.y - pointer.y) > 0.2;
     });
-    later(function () { wrap.remove(); spot.remove(); });
+    later(function () { spot.remove(); });
   }
 
   // Rects are cached and refreshed after scrolling settles, never read inside the loop.
@@ -479,65 +498,54 @@
     });
   }
 
-  // 6. Cards: border spotlight for every card, a slight tilt for feature and step cards only.
-  function cards() {
-    var hovered = null, rect = null, states = [];
-    function measure() { rect = hovered ? hovered.getBoundingClientRect() : null; }
-    listen(D, 'pointerover', function (e) {
-      var c = e.target && e.target.closest ? e.target.closest('.card') : null;
-      if (c === hovered) return;
-      if (hovered) hovered.classList.remove('is-lit');
-      hovered = c;
-      if (c) {
-        c.classList.add('is-lit');
-        if (!states.some(function (s) { return s.el === c; })) {
-          states.push({ el: c, x: 0, y: 0, tilt: c.classList.contains('feature') || c.classList.contains('step') });
-        }
-      }
-      measure();
-      kick();
-    });
-    resizers.push(measure);
-    onScrollEnd(measure);
-    updaters.push(function () {
-      if (hovered && !pointer.active) { hovered.classList.remove('is-lit'); hovered = rect = null; }
-      var moving = false;
-      states.forEach(function (s) {
-        var tx = 0, ty = 0;
-        if (s.el === hovered && rect && !scrolling) {
-          var fx = (pointer.x - rect.left) / rect.width, fy = (pointer.y - rect.top) / rect.height;
-          s.el.style.setProperty('--mx', (fx * 100).toFixed(1) + '%');
-          s.el.style.setProperty('--my', (fy * 100).toFixed(1) + '%');
-          tx = Math.max(-1, Math.min(1, fx * 2 - 1));
-          ty = Math.max(-1, Math.min(1, fy * 2 - 1));
-        }
-        if (!s.tilt) return;
-        s.x = lerp(s.x, tx, 0.08);
-        s.y = lerp(s.y, ty, 0.08);
-        if (near(s.x, tx) && near(s.y, ty)) { s.x = tx; s.y = ty; } else moving = true;
-        // rotateX(-y 3deg) rotateY(x 3deg) as one axis-angle on rotate, so the reveal transform is untouched.
-        var ang = Math.min(Math.sqrt(s.x * s.x + s.y * s.y) * 3, 3);
-        s.el.style.rotate = ang < 0.001 ? '' : (-s.y).toFixed(4) + ' ' + s.x.toFixed(4) + ' 0 ' + ang.toFixed(3) + 'deg';
-      });
-      return moving;
-    });
-    later(function () {
-      if (hovered) hovered.classList.remove('is-lit');
-      states.forEach(function (s) { s.el.style.rotate = ''; s.el.style.removeProperty('--mx'); s.el.style.removeProperty('--my'); });
-    });
+  var api = {
+    S: S, pointer: pointer, kick: kick, later: later, listen: listen, each: each, lerp: lerp, clamp: clamp,
+    spring: spring, pageTop: pageTop, settle: settle, watch: watch, tilt: tilt, onScrollEnd: onScrollEnd, rd: rd,
+    loop: function (fn) { updaters.push(fn); },
+    resize: function (fn) { resizers.push(fn); },
+    wide: wide, mid: mid, short: short, pf: false
+  };
+
+  // Chapter mechanics (chapters.js) register here; they run on every start and tear down with it.
+  // Everything measured is measured again once fonts or late layout have moved things.
+  function relayout() {
+    if (!on) return;
+    resizers.forEach(function (fn) { fn(); });
+    kick();
+  }
+
+  W.brutalMotion = {
+    add: function (m) {
+      mods.push(m);
+      if (on) { m(api); relayout(); }
+    }
+  };
+
+  function curtain() {
+    var c = D.querySelector('.curtain');
+    if (!c) return;
+    // Only as the page opens; a gate change later in the visit never drops it over the content.
+    if (!W.performance || performance.now() > 4000) { c.remove(); return; }
+    setTimeout(function () { c.remove(); }, 1300);
   }
 
   function start() {
     on = true;
     var pf = fine.matches && hoverOk.matches, timer;
+    api.pf = pf;
     root.classList.add('motion');
     if (pf) root.classList.add('pointer-fine');
     if (!prepared) prepare();
     if (!introDone) {
       introDone = true;
-      root.classList.add('intro');
-      setTimeout(function () { root.classList.remove('intro'); }, 2400);
+      curtain();
+      // State classes on <html> are is-* so they can never match a component class (.intro is one).
+      root.classList.add('is-intro');
+      setTimeout(function () { root.classList.remove('is-intro'); relayout(); }, 2600);
     }
+    resizers.push(function () { S.vh = W.innerHeight; S.vw = D.documentElement.clientWidth; });
+    S.sy = S.prev = W.scrollY;
+    listen(W, 'scroll', kick);
     reveals();
     listen(D, 'visibilitychange', function () {
       if (!D.hidden) { kick(); return; }
@@ -555,27 +563,46 @@
     }
     if (pf) {
       trackPointer();
-      if (hero) phone();
-      cursor();
+      if (hero) tilt(hero.querySelector('.phone'), function () { return heroVisible; });
+      spotlight();
       magnetic();
-      cards();
+    }
+    mods.forEach(function (m) { m(api); });
+    if (D.fonts) {
+      D.fonts.ready.then(relayout);
+      if (D.fonts.addEventListener) listen(D.fonts, 'loadingdone', relayout);
+    }
+    if (D.readyState !== 'complete') listen(W, 'load', relayout);
+    // Late layout shifts (a font swap, an opened answer) change the page height: measure again.
+    if ('ResizeObserver' in W) {
+      var rt, ro = new ResizeObserver(function () { clearTimeout(rt); rt = setTimeout(relayout, 120); });
+      ro.observe(D.body);
+      later(function () { ro.disconnect(); clearTimeout(rt); });
     }
     kick();
   }
 
   // Tear everything down; runs before every start and whenever a gate changes.
+  // Media queries can fire change events without a real change (seen at startup); a restart then
+  // would cut the intro short, so only a different set of gate values tears down and restarts.
+  var gates = [reduce, fine, hoverOk, wide, mid, short], sig = '';
   function apply() {
+    var next = gates.map(function (m) { return m.matches ? 1 : 0; }).join('');
+    if (next === sig) return;
+    sig = next;
     on = false;
     if (raf) W.cancelAnimationFrame(raf);
     raf = last = 0;
     while (cleanups.length) cleanups.pop()();
     updaters = [];
     resizers = [];
-    root.classList.remove('motion', 'pointer-fine', 'intro');
+    root.classList.remove('motion', 'pointer-fine');
+    // The intro timer clears is-intro; a restart inside its window keeps it.
+    if (reduce.matches) root.classList.remove('is-intro');
     if (!reduce.matches) start(); else if (hero) ringRun(false);
   }
 
-  [reduce, fine, hoverOk].forEach(function (m) {
+  gates.forEach(function (m) {
     if (m.addEventListener) m.addEventListener('change', apply); else m.addListener(apply);
   });
   apply();
